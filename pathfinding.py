@@ -1,6 +1,7 @@
 graph = []
 start_node = ()
 goal_node = ()
+visited = []
 path = []
 
 # Heuristic function
@@ -9,62 +10,64 @@ def manhattan(n):
 
 # Successor function, returns the children of a parent
 # ordered by increasing cost estimated by heuristic
-def children(parent):
+def children(parent, grandparent):
+   valid_dxdy = [(-1, 0), (0, -1), (0, 1), (1, 0)] # The valid moves from parent node
    children = []
+   for dxdy in valid_dxdy:
+      child_x = parent[0] + dxdy[0]
+      child_y = parent[1] + dxdy[1]
+      child = (child_x, child_y)
+      if child_x < 0 or child_x == len(graph): # If child is not in graph
+         continue
+      if child_y < 0 or child_y == len(graph[child_x]): # If child is not in graph
+         continue
+      if child in visited: # A wee bit exhaustive but prevents revisited states
+         continue
+      if graph[child_x][child_y] is not 'X': # If child is not a wall, it can be expanded
+            children.append(child)
 
-   # Generate all possible children
-   for dx in range(-1, 1):
-      for dy in range(-1, 0):
-         child_x = abs(parent[0] - dx)
-         child_y = abs(parent[1] - dy)
-         child = graph[child_x][child_y]
-         if (not child): # If child is 0, it can be expanded
-            children.append((child_x, child_y, manhattan))
-   
-   # Order the children based on their heuristic
-   children.sort(key=lambda tup: tup[2])
+   # Sort the children based on their heuristic
+   children.sort(key=lambda child: manhattan(child))
 
-   return []
+   return children
 
-def expand(n):
-   path.append(n)
+def expand(n, grandparent):
+   visited.append(n) # add this to the list of visited nodes
+   if n == goal_node: # goal check
+      return True
 
-   fringe = children(n)
+   fringe = children(n, grandparent) # generate the children (sorted by heuristic)
 
-   if (not fringe):
-      path.pop()
+   if not fringe: # if there are no moves from here, go back
       return False
 
-   for fringe_node in fringe:
-      if (expand(fringe_node)):
+   for fringe_node in fringe: # else go through the children
+      if expand(fringe_node, n):
          path.append(fringe_node)
-
-   if (n == goal_node): # goal check
-      return True
+         return True
    
 print('Enter a graph')
 print('Enter \'Y\' when finished')
 
-y = 0
+x = 0
 while (True):
    user_input = input()
 
-   if (user_input == 'Y'): break
+   if user_input == 'Y': break
 
-   x = 0
+   y = 0
    for char in user_input:
-      if (char == 'S'):
+      if char == 'S':
          start_node = (x, y)
-      elif (char == 'G'):
+      elif char == 'G':
          goal_node = (x, y)
-      x += 1
+      y += 1
 
    graph.append(user_input)
-   y += 1
+   x += 1
 
-expand(start_node)
-
-print(graph)
-print(start_node)
-print(goal_node)
-print(manhattan(start_node))
+if not expand(start_node, start_node):
+      print('No path found.')
+path.append(start_node)
+path.reverse()
+print(path)
